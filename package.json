@@ -1,0 +1,21 @@
+{
+  "name": "eventease",
+  "version": "1.0.0",
+  "description": "EventEase - Campus Event Management & Booking Platform",
+  "scripts": {
+    "test": "node server/scripts/testSuite.js",
+    "seed:admin": "node server/scripts/seedAdmin.js",
+    "seed:data": "node server/scripts/seedSampleData.js"
+  },
+  "keywords": [
+    "react",
+    "vite",
+    "nodejs",
+    "express",
+    "mongodb",
+    "tailwind",
+    "events-management"
+  ],
+  "author": "EventEase Team",
+  "license": "MIT"
+}

@@ -1,0 +1,202 @@
+import React, { useState } from 'react';
+import Modal from '../../../components/common/Modal';
+import Button from '../../../components/common/Button';
+import FormInput from '../../../components/common/FormInput';
+import SelectInput from '../../../components/common/SelectInput';
+import TextArea from '../../../components/common/TextArea';
+import { useToast } from '../../../context/ToastContext';
+
+export default function CreateEditEventModal({
+  isOpen,
+  onClose,
+  initialEvent = null,
+  onSave,
+}) {
+  const isEditing = Boolean(initialEvent);
+  const toast = useToast();
+
+  const [title, setTitle] = useState(initialEvent?.title || '');
+  const [category, setCategory] = useState(initialEvent?.category || 'technology');
+  const [description, setDescription] = useState(initialEvent?.description || '');
+  const [venue, setVenue] = useState(initialEvent?.venue || '');
+  const [startDateTime, setStartDateTime] = useState(
+    initialEvent?.startDateTime ? initialEvent.startDateTime.slice(0, 16) : ''
+  );
+  const [endDateTime, setEndDateTime] = useState(
+    initialEvent?.endDateTime ? initialEvent.endDateTime.slice(0, 16) : ''
+  );
+  const [registrationDeadline, setRegistrationDeadline] = useState(
+    initialEvent?.registrationDeadline ? initialEvent.registrationDeadline.slice(0, 16) : ''
+  );
+  const [price, setPrice] = useState(initialEvent?.price?.toString() || '0');
+  const [capacity, setCapacity] = useState(initialEvent?.capacity?.toString() || '100');
+  const [bannerImage, setBannerImage] = useState(
+    initialEvent?.bannerImage || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80'
+  );
+  const [rules, setRules] = useState(initialEvent?.rules?.join('\n') || 'Carry college ID badge.\nBe on time.');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title.trim() || !venue.trim() || !startDateTime) {
+      toast.error('Please fill in all required fields.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTimeout(() => {
+      const newOrUpdatedEvent = {
+        id: initialEvent?.id || `evt-${Date.now()}`,
+        title,
+        category,
+        description,
+        venue,
+        location: venue,
+        startDateTime: new Date(startDateTime).toISOString(),
+        endDateTime: endDateTime ? new Date(endDateTime).toISOString() : new Date(startDateTime).toISOString(),
+        registrationDeadline: registrationDeadline
+          ? new Date(registrationDeadline).toISOString()
+          : new Date(startDateTime).toISOString(),
+        price: Number(price),
+        isFree: Number(price) === 0,
+        capacity: Number(capacity),
+        availableSeats: initialEvent ? initialEvent.availableSeats : Number(capacity),
+        bannerImage,
+        rules: rules.split('\n').filter(Boolean),
+        status: isEditing ? initialEvent.status : 'pending', // Workflow: New events default to 'pending'
+      };
+
+      setIsSubmitting(false);
+      onSave && onSave(newOrUpdatedEvent);
+      toast.success(
+        isEditing
+          ? 'Event details updated successfully!'
+          : 'Event proposal submitted! It is now pending administrative review.'
+      );
+      onClose();
+    }, 600);
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditing ? 'Edit Event Details' : 'Create New Campus Event'}
+      description={
+        isEditing
+          ? 'Update event timing, venue capacity, and rules.'
+          : 'Submit your event proposal for campus administrative approval.'
+      }
+      maxWidth="max-w-2xl"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <FormInput
+          label="Event Title"
+          placeholder="e.g. Annual Campus Hackathon 2026"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <SelectInput
+            label="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            options={[
+              { label: 'Technology', value: 'technology' },
+              { label: 'Workshops', value: 'workshops' },
+              { label: 'Hackathons', value: 'hackathons' },
+              { label: 'Cultural', value: 'cultural' },
+              { label: 'Sports', value: 'sports' },
+            ]}
+          />
+          <FormInput
+            label="Venue / Location"
+            placeholder="Main Auditorium, Hall B"
+            value={venue}
+            onChange={(e) => setVenue(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <FormInput
+            label="Start Date & Time"
+            type="datetime-local"
+            value={startDateTime}
+            onChange={(e) => setStartDateTime(e.target.value)}
+            required
+          />
+          <FormInput
+            label="End Date & Time"
+            type="datetime-local"
+            value={endDateTime}
+            onChange={(e) => setEndDateTime(e.target.value)}
+          />
+          <FormInput
+            label="Registration Deadline"
+            type="datetime-local"
+            value={registrationDeadline}
+            onChange={(e) => setRegistrationDeadline(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormInput
+            label="Admission Price ($)"
+            type="number"
+            min="0"
+            step="1"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            helperText="Set to 0 for Free admission"
+          />
+          <FormInput
+            label="Total Seat Capacity"
+            type="number"
+            min="1"
+            value={capacity}
+            onChange={(e) => setCapacity(e.target.value)}
+            required
+          />
+        </div>
+
+        <FormInput
+          label="Banner Image URL"
+          placeholder="https://images.unsplash.com/..."
+          value={bannerImage}
+          onChange={(e) => setBannerImage(e.target.value)}
+          helperText="High resolution landscape banner"
+        />
+
+        <TextArea
+          label="Event Description"
+          rows={3}
+          placeholder="Provide a comprehensive summary of what attendees will learn and experience..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+        />
+
+        <TextArea
+          label="Guidelines & Rules (One per line)"
+          rows={2}
+          value={rules}
+          onChange={(e) => setRules(e.target.value)}
+          helperText="Separate rules by pressing Enter"
+        />
+
+        <div className="pt-4 border-t border-subtle flex items-center justify-end gap-3">
+          <Button variant="outline" size="md" onClick={onClose} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button variant="primary" size="md" type="submit" isLoading={isSubmitting}>
+            {isEditing ? 'Save Changes' : 'Submit Event for Review'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
