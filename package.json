@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "EventEase - Campus Event Management & Booking Platform",
   "scripts": {
+    "start": "node server/src/server.js",
     "test": "node server/scripts/testSuite.js",
     "seed:admin": "node server/scripts/seedAdmin.js",
     "seed:data": "node server/scripts/seedSampleData.js"
